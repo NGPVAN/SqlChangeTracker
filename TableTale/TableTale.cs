@@ -12,29 +12,26 @@ namespace TableTale
 {
   public class TableTale
   {
-    readonly SqlConnectionStringBuilder _connectionString;
-    private readonly string _table;
-    private readonly string _sql;
     private CancellationToken _token;
     private readonly Task _task;
     private readonly Action<RowChange> _onChange;
-    private readonly string _schema;
     private readonly TimeSpan _interval;
 
-    public TableTale(string connectionString, string table, Action<RowChange> onChange, CancellationToken token, string schema = "dbo", int intervalInSeconds = 1)
+    public TableTale(Action<RowChange> onChange, CancellationToken token)
     {
-      _connectionString = new SqlConnectionStringBuilder(connectionString);
-      _interval = TimeSpan.FromSeconds(intervalInSeconds);
-      _schema = schema;
-      _table = table;
+      _interval = TimeSpan.Parse(System.Configuration.ConfigurationManager.AppSettings["PollInterval"]);
       _token = token;
       _onChange = onChange;
-      _sql = GetChangedRowSql(_table, _schema);
+
       Action a = DoWork;
       _task = Task.Run(a, _token);
 
-      EnableChangeTracking();
-      CreateTableTaleTable();
+      using(var m = new TestEntities())
+      {
+          foreach (var tt in m.TrackedTables) {
+              EnableChangeTracking(tt);
+          }
+      }
     }
 
     public TaskStatus Status
@@ -46,110 +43,121 @@ namespace TableTale
     {
       while (!_token.IsCancellationRequested)
       {
-        long version = GetVersion();
-        var changes = GetChangesFromVersion(version).ToList();
-        bool versionChanged = false;
-        foreach (var change in changes)
+        using (var m = new TestEntities())
         {
-          if (change.SYS_CHANGE_VERSION > version)
-          {
-            version = change.SYS_CHANGE_VERSION;
-            versionChanged = true;
-          }
-          try
-          {
-            _onChange(change);
-          }
-          catch (Exception ex)
-          {
-            Trace.WriteLine(ex.ToString());
-          }
+            foreach (var tt in m.TrackedTables.ToList())
+            {
+                var changes = GetChangesFromVersion(tt).ToList();
+
+                foreach (var change in changes)
+                {
+                    if (change.SYS_CHANGE_VERSION > (tt.Version ?? 0))
+                    {
+                        tt.Version = change.SYS_CHANGE_VERSION;
+                    }
+                    try
+                    {
+                        _onChange(change);
+                    }
+                    catch (Exception ex)
+                    {
+                        Trace.WriteLine(ex.ToString());
+                    }
+                }
+
+
+                tt.LastRun = DateTime.Now;
+                Trace.WriteLine(string.Format("{0}: {1} changes", GetFullName(tt), changes.Count()));
+                m.SaveChanges();
+            }
         }
 
-        if (versionChanged)
-        {
-          SetVersion(version);
-        }
-
-        Thread.Sleep(_interval);
+        _token.WaitHandle.WaitOne(_interval);
       }
     }
 
-    private long GetVersion()
+    private static void EnableChangeTracking(TrackedTable table)
     {
-      using (var c = new SqlConnection(_connectionString.ConnectionString))
-      {
-        return c.Query<long>("select [Version] from TableTale where [table] = @Table", new { Table = _table }).First();
-      }
-    }
-
-    private void SetVersion(long version)
-    {
-      using (var c = new SqlConnection(_connectionString.ConnectionString))
-      {
-        c.Execute("update TableTale set [version] = @Version, [lastRun] = getdate() where [table] = @Table", new { Version = version, Table = _table });
-      }
-    }
-
-    private void EnableChangeTracking()
-    {
-      using (var c = new SqlConnection(_connectionString.ConnectionString))
+        using (var c = new SqlConnection(table.ConnectionString))
       {
         string enableChangeTrackingSql =
           string.Format(
-            "IF NOT EXISTS(SELECT 1 FROM sys.change_tracking_databases ctd join sys.databases d on ctd.database_id = d.database_id WHERE d.name = '{0}') ALTER DATABASE [{0}] SET CHANGE_TRACKING = ON (CHANGE_RETENTION = 1 DAYS, AUTO_CLEANUP = ON); " +
-            "IF NOT EXISTS(SELECT 1 FROM [{0}].sys.change_tracking_tables WHERE object_id=OBJECT_ID('{1}')) ALTER TABLE [{0}].[{2}].[{1}] ENABLE CHANGE_TRACKING WITH (TRACK_COLUMNS_UPDATED = OFF);", _connectionString.InitialCatalog, _table, _schema);
+            "IF NOT EXISTS(SELECT 1 FROM master.sys.change_tracking_databases ctd join master.sys.databases d on ctd.database_id = d.database_id WHERE d.name = '{0}') ALTER DATABASE [{0}] SET CHANGE_TRACKING = ON (CHANGE_RETENTION = 1 DAYS, AUTO_CLEANUP = ON); " +
+            "IF NOT EXISTS(SELECT 1 from [{0}].sys.change_tracking_tables ctt join [{0}].sys.objects o on o.object_id = ctt.object_id where o.[type] = 'U' and o.name = '{2}') ALTER TABLE [{0}].[{1}].[{2}] ENABLE CHANGE_TRACKING WITH (TRACK_COLUMNS_UPDATED = OFF);", table.Database, table.Schema, table.Table);
         c.Execute(enableChangeTrackingSql);
       }
     }
 
-    private void CreateTableTaleTable()
+    private static IEnumerable<RowChange> GetChangesFromVersion(TrackedTable table)
     {
-      using (var c = new SqlConnection(_connectionString.ConnectionString))
-      {
-
-        const string tableTaleCreateSql = "if not exists (select 1 from sys.tables where name = 'TableTale') create table TableTale ([table] varchar(128) primary key, [version] bigint, [lastRun] datetime);";
-        const string rowForTableSql = "if not exists (select 1 from TableTale where [Table] = @t) insert into [TableTale] values (@t, 0, getdate());";
-
-        c.Execute(tableTaleCreateSql);
-        c.Execute(rowForTableSql, new { t = _table });
-      }
+        var changes = new List<RowChange>();
+        using (var c = new SqlConnection(table.ConnectionString))
+        {
+            string changedRowSql = GetChangedRowSql(table);
+            changes.AddRange(
+              c.Query<object>(changedRowSql, new { Version = table.Version ?? 0 })
+                .Select(JObject.FromObject)
+                .Select(jRow => new RowChange
+                {
+                    SYS_CHANGE_VERSION = jRow["SYS_CHANGE_VERSION"].Value<long>(),
+                    SYS_CHANGE_OPERATION = jRow["SYS_CHANGE_OPERATION"].ToString(),
+                    Table = table.Table,
+                    Database = table.Database,
+                    Row = jRow
+                }));
+        }
+        return changes;
     }
 
-    private IEnumerable<RowChange> GetChangesFromVersion(long version)
+    private static IList<Column> GetColumns(TrackedTable table)
     {
-      var changes = new List<RowChange>();
-      using (var c = new SqlConnection(_connectionString.ConnectionString))
-      {
-        changes.AddRange(
-          c.Query<object>(_sql, new {Version = version})
-            .Select(JObject.FromObject)
-            .Select(jRow => new RowChange
-            {
-              SYS_CHANGE_VERSION = jRow["SYS_CHANGE_VERSION"].Value<long>(),
-              SYS_CHANGE_OPERATION = jRow["SYS_CHANGE_OPERATION"].ToString(),
-              Table = _table,
-              Database = c.Database,
-              Row = jRow
-            }));
-      }
-      return changes;
+        using (var c = new SqlConnection(table.ConnectionString))
+        {
+            string query = string.Format(@"USE {0};
+                                            SELECT  c.COLUMN_NAME as Name,CASE WHEN pk.COLUMN_NAME IS NOT NULL THEN 1 ELSE 0 END AS IsPrimaryKey
+                                            FROM INFORMATION_SCHEMA.COLUMNS c
+                                            LEFT JOIN (
+                                                        SELECT ku.TABLE_CATALOG,ku.TABLE_SCHEMA,ku.TABLE_NAME,ku.COLUMN_NAME
+                                                        FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS AS tc
+                                                        INNER JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE AS ku
+                                                            ON tc.CONSTRAINT_TYPE = 'PRIMARY KEY'
+                                                            AND tc.CONSTRAINT_NAME = ku.CONSTRAINT_NAME
+                                                        )   pk
+                                            ON  c.TABLE_CATALOG = pk.TABLE_CATALOG
+                                                        AND c.TABLE_SCHEMA = pk.TABLE_SCHEMA
+                                                        AND c.TABLE_NAME = pk.TABLE_NAME
+                                                        AND c.COLUMN_NAME = pk.COLUMN_NAME
+                                            WHERE c.TABLE_NAME = '{2}' and c.TABLE_SCHEMA = '{1}'
+                                            ORDER BY c.TABLE_SCHEMA,c.TABLE_NAME, c.ORDINAL_POSITION", table.Database, table.Schema, table.Table);
+            return c.Query<Column>(query).ToList();
+        }
     }
 
-    private string GetChangedRowSql(string table, string schema)
+    private static string GetFullName(TrackedTable table)
     {
-      using (var c = new SqlConnection(_connectionString.ConnectionString))
-      {
-        string sql = "select ct.SYS_CHANGE_VERSION, ct.SYS_CHANGE_OPERATION, t.* from CHANGETABLE(CHANGES " + table + ", @Version) ct join [" + schema + "].[" + table + "] (nolock) t on ";
-        string[] keys = c.Query<Column>("sp_pkeys " + table).ToList().Select(r => string.Format("t.[{0}] = ct.[{0}]", r.COLUMN_NAME)).ToArray();
-        sql += string.Join(" and ", keys);
-        return sql;
-      }
+        return "[" + table.Database + "].[" + table.Schema + "].[" + table.Table + "]";
+    }
+
+    private static string GetChangedRowSql(TrackedTable table)
+    {
+        using (var c = new SqlConnection(table.ConnectionString))
+        {
+            var columns = GetColumns(table);
+            var selectClauseColumns = string.Join(",", columns.Select(x => x.IsPrimaryKey ? "ct.[" + x.Name + "]" : "t.[" + x.Name + "]").ToArray());
+            string fullName = GetFullName(table);
+
+            string sql = "select ct.SYS_CHANGE_VERSION, ct.SYS_CHANGE_OPERATION, " + selectClauseColumns + " from CHANGETABLE(CHANGES " + fullName + ", @Version) ct " +
+                "left outer join " + fullName + " (nolock) t on ";
+            string[] onClauseColumns = columns.Where(col => col.IsPrimaryKey).Select(r => string.Format("t.[{0}] = ct.[{0}]", r.Name)).ToArray();
+            sql += string.Join(" and ", onClauseColumns);
+            return sql;
+        }
     }
 
     struct Column
     {
-      public string COLUMN_NAME;
+      public string Name;
+      public bool IsPrimaryKey;
     }
   }
 }
