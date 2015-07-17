@@ -1,6 +1,6 @@
 using Newtonsoft.Json.Linq;
 
-namespace TableTale
+namespace TableReader
 {
   public class RowChange
   {
@@ -8,6 +8,6 @@ namespace TableTale
     public string SYS_CHANGE_OPERATION;
     public string Database;
     public string Table;
-    public JObject Row;
+    public object Row;
   }
 }

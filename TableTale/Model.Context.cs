@@ -7,7 +7,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace TableTale
+namespace TableReader
 {
     using System;
     using System.Data.Entity;
