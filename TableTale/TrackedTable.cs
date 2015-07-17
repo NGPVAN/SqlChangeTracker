@@ -21,5 +21,6 @@ namespace TableReader
         public string Table { get; set; }
         public Nullable<long> Version { get; set; }
         public Nullable<System.DateTime> LastRun { get; set; }
+        public string Procedure { get; set; }
     }
 }

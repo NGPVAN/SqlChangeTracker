@@ -1,11 +1,8 @@
-﻿using EasyNetQ;
-using EasyNetQ.Topology;
-using Microsoft.WindowsAzure.Storage;
+﻿using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Auth;
 using Microsoft.WindowsAzure.Storage.Blob;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
-using RabbitMQ.Client;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
@@ -19,10 +16,8 @@ namespace TableReader
 {
     public class Program
     {
-        public static IBus _bus;
         public static void Main()
         {
-            _bus = RabbitHutch.CreateBus(ConfigurationManager.ConnectionStrings["Amqp"].ConnectionString);
             CancellationTokenSource cts = new CancellationTokenSource();
             var tt = new TableTale(OnChange, cts.Token);
             cts.Token.WaitHandle.WaitOne();

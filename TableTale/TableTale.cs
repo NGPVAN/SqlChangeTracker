@@ -27,7 +27,10 @@ namespace TableReader
       {
           foreach (var tt in m.TrackedTables)
           {
-              tt.EnableChangeTracking();
+              if (!string.IsNullOrEmpty(tt.Table))
+              {
+                  tt.EnableChangeTracking(); // table-based tracking only
+              }
           }
       }
 

@@ -4,7 +4,7 @@
   <edmx:Runtime>
     <!-- SSDL content -->
     <edmx:StorageModels>
-      <Schema Namespace="TestModel.Store" Provider="System.Data.SqlClient" ProviderManifestToken="2008" Alias="Self" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm/ssdl">
+    <Schema Namespace="TestModel.Store" Provider="System.Data.SqlClient" ProviderManifestToken="2008" Alias="Self" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm/ssdl">
         <EntityType Name="TrackedTable">
           <Key>
             <PropertyRef Name="Id" />
@@ -13,15 +13,15 @@
           <Property Name="ConnectionString" Type="nvarchar" MaxLength="512" Nullable="false" />
           <Property Name="Schema" Type="nvarchar" MaxLength="512" Nullable="false" />
           <Property Name="Database" Type="nvarchar" MaxLength="512" Nullable="false" />
-          <Property Name="Table" Type="nvarchar" MaxLength="512" Nullable="false" />
+          <Property Name="Table" Type="nvarchar" MaxLength="512" />
+          <Property Name="Procedure" Type="nvarchar" MaxLength="512" />
           <Property Name="Version" Type="bigint" />
           <Property Name="LastRun" Type="datetime" />
         </EntityType>
         <EntityContainer Name="TestModelStoreContainer">
           <EntitySet Name="TrackedTable" EntityType="Self.TrackedTable" Schema="dbo" store:Type="Tables" />
         </EntityContainer>
-      </Schema>
-    </edmx:StorageModels>
+      </Schema></edmx:StorageModels>
     <!-- CSDL content -->
     <edmx:ConceptualModels>
       <Schema Namespace="TestModel" Alias="Self" annotation:UseStrongSpatialTypes="false" xmlns:annotation="http://schemas.microsoft.com/ado/2009/02/edm/annotation" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm">
@@ -33,9 +33,10 @@
           <Property Name="ConnectionString" Type="String" MaxLength="512" FixedLength="false" Unicode="true" Nullable="false" />
           <Property Name="Schema" Type="String" MaxLength="512" FixedLength="false" Unicode="true" Nullable="false" />
           <Property Name="Database" Type="String" MaxLength="512" FixedLength="false" Unicode="true" Nullable="false" />
-          <Property Name="Table" Type="String" MaxLength="512" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="Table" Type="String" MaxLength="512" FixedLength="false" Unicode="true" />
           <Property Name="Version" Type="Int64" />
           <Property Name="LastRun" Type="DateTime" Precision="3" />
+          <Property Name="Procedure" Type="String" MaxLength="512" FixedLength="false" Unicode="true" />
         </EntityType>
         <EntityContainer Name="TestEntities" annotation:LazyLoadingEnabled="true">
           <EntitySet Name="TrackedTables" EntityType="Self.TrackedTable" />
@@ -49,6 +50,7 @@
           <EntitySetMapping Name="TrackedTables">
             <EntityTypeMapping TypeName="TestModel.TrackedTable">
               <MappingFragment StoreEntitySet="TrackedTable">
+                <ScalarProperty Name="Procedure" ColumnName="Procedure" />
                 <ScalarProperty Name="Id" ColumnName="Id" />
                 <ScalarProperty Name="ConnectionString" ColumnName="ConnectionString" />
                 <ScalarProperty Name="Schema" ColumnName="Schema" />

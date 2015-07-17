@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Dapper;
 using System.Diagnostics;
 using System.Transactions;
+using System.Data;
 
 namespace TableReader
 {
@@ -17,14 +18,30 @@ namespace TableReader
             Trace.WriteLine(string.Format("Querying changes for {0}...", GetFullName()));
             var changes = new List<RowChange>();
 
-            using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, new TransactionOptions() {  IsolationLevel = IsolationLevel.ReadUncommitted }))
+            using (var scope = new TransactionScope(TransactionScopeOption.RequiresNew, new TransactionOptions() {  IsolationLevel = System.Transactions.IsolationLevel.ReadUncommitted }))
             {
                 using (var c = new SqlConnection(ConnectionString))
                 {
-                    string changedRowSql = GetChangedRowSql();
+                    IEnumerable<dynamic> results = new List<dynamic>();
+
+                    if (!Version.HasValue) {
+                        Version = 0;
+                    }
+                    if (!string.IsNullOrEmpty(this.Table))
+                    {
+                        string changedRowSql = GetChangedRowSql();
+                        results = c.Query<dynamic>(changedRowSql, new { Version = this.Version });
+                    }
+
+                    if (!string.IsNullOrEmpty(this.Procedure))
+                    {
+                        var p = new DynamicParameters();
+                        p.Add("Version", dbType: DbType.Int64, direction: ParameterDirection.InputOutput, value: Version.Value);
+                        results = c.Query<dynamic>(GetFullName(), p, commandType: CommandType.StoredProcedure);
+                    }
 
                     changes.AddRange(
-                      c.Query<dynamic>(changedRowSql, new { Version = this.Version ?? 0 })
+                        results
                         .ToList()
                         .Select(jRow => new RowChange
                         {
@@ -42,23 +59,24 @@ namespace TableReader
 
         public string GetChangedRowSql()
         {
-            using (var c = new SqlConnection(ConnectionString))
-            {
-                var columns = GetColumns();
-                var selectClauseColumns = string.Join(",", columns.Select(x => x.IsPrimaryKey ? "ct.[" + x.Name + "]" : "t.[" + x.Name + "]").ToArray());
-                string fullName = GetFullName();
 
-                string sql = "select ct.SYS_CHANGE_VERSION, ct.SYS_CHANGE_OPERATION, " + selectClauseColumns + " from CHANGETABLE(CHANGES " + fullName + ", @Version) ct " +
-                    "left outer join " + fullName + " (nolock) t on ";
-                string[] onClauseColumns = columns.Where(col => col.IsPrimaryKey).Select(r => string.Format("t.[{0}] = ct.[{0}]", r.Name)).ToArray();
-                sql += string.Join(" and ", onClauseColumns);
-                return sql;
-            }
+                using (var c = new SqlConnection(ConnectionString))
+                {
+                    var columns = GetColumns();
+                    var selectClauseColumns = string.Join(",", columns.Select(x => x.IsPrimaryKey ? "ct.[" + x.Name + "]" : "t.[" + x.Name + "]").ToArray());
+                    string fullName = GetFullName();
+
+                    string sql = "select ct.SYS_CHANGE_VERSION, ct.SYS_CHANGE_OPERATION, " + selectClauseColumns + " from CHANGETABLE(CHANGES " + fullName + ", @Version) ct " +
+                        "left outer join " + fullName + " (nolock) t on ";
+                    string[] onClauseColumns = columns.Where(col => col.IsPrimaryKey).Select(r => string.Format("t.[{0}] = ct.[{0}]", r.Name)).ToArray();
+                    sql += string.Join(" and ", onClauseColumns);
+                    return sql;
+                }
         }
 
         public string GetFullName()
         {
-            return "[" + Database + "].[" + Schema + "].[" + Table + "]";
+            return "[" + Database + "].[" + Schema + "].[" + (!string.IsNullOrEmpty(Table) ? Table : Procedure) + "]";
         }
 
         public string GetFileName()
@@ -96,7 +114,7 @@ namespace TableReader
             using (var c = new SqlConnection(ConnectionString))
             {
                 string enableChangeTrackingSql =
-                  string.Format(
+                    string.Format(
                     "IF NOT EXISTS(SELECT 1 FROM master.sys.change_tracking_databases ctd join master.sys.databases d on ctd.database_id = d.database_id WHERE d.name = '{0}') ALTER DATABASE [{0}] SET CHANGE_TRACKING = ON (CHANGE_RETENTION = 1 DAYS, AUTO_CLEANUP = ON); " +
                     "IF NOT EXISTS(SELECT 1 from [{0}].sys.change_tracking_tables ctt join [{0}].sys.objects o on o.object_id = ctt.object_id where o.[type] = 'U' and o.name = '{2}') ALTER TABLE [{0}].[{1}].[{2}] ENABLE CHANGE_TRACKING WITH (TRACK_COLUMNS_UPDATED = OFF);", Database, Schema, Table);
                 c.Execute(enableChangeTrackingSql);
