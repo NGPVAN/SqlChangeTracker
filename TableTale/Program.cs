@@ -23,7 +23,7 @@ namespace TableReader
             cts.Token.WaitHandle.WaitOne();
         }
 
-        public static void OnChange(TrackedTable t, List<RowChange> rowChanges)
+        public static void OnChange(TrackedRow t, List<RowChange> rowChanges)
         {
             if (!rowChanges.Any()) return;
 

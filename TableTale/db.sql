@@ -1,11 +1,11 @@
-﻿-- drop table dbo.TrackedTable
+﻿-- drop table dbo.TrackedRows
 IF NOT EXISTS (
     SELECT * FROM sys.tables t
     INNER JOIN sys.schemas s on t.schema_id = s.schema_id
-    WHERE s.name = 'dbo' and t.name = 'TrackedTable'
+    WHERE s.name = 'dbo' and t.name = 'TrackedRows'
 )
 BEGIN
-CREATE TABLE [dbo].[TrackedTable](
+CREATE TABLE [dbo].[TrackedRows](
 	[Id] bigint not null primary key identity(1,1),
 	[ConnectionString] [nvarchar](512) NOT NULL,
 	[Schema] [nvarchar](512) NOT NULL default (N'dbo'),
@@ -16,7 +16,7 @@ CREATE TABLE [dbo].[TrackedTable](
 	[LastRun] [datetime] NULL
 ) ON [PRIMARY]
 
-alter table [dbo].TrackedTable add constraint UC_TrackedTable unique ([Database], [Schema], [Table], [Procedure])
+alter table [dbo].TrackedRows add constraint UC_TrackedRows unique ([Database], [Schema], [Table], [Procedure])
 END
 
 /*

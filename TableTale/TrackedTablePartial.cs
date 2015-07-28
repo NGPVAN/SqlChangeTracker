@@ -11,7 +11,7 @@ using System.Data;
 
 namespace TableReader
 {
-    public partial class TrackedTable
+    public partial class TrackedRow
     {
         public IEnumerable<RowChange> GetChangesFromVersion()
         {

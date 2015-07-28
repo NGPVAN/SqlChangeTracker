@@ -14,18 +14,18 @@ namespace TableReader
   {
     private CancellationToken _token;
     private readonly Task _task;
-    private readonly Action<TrackedTable, List<RowChange>> _onChange;
+    private readonly Action<TrackedRow, List<RowChange>> _onChange;
     private readonly TimeSpan _interval;
 
-    public TableTale(Action<TrackedTable, List<RowChange>> onChange, CancellationToken token)
+    public TableTale(Action<TrackedRow, List<RowChange>> onChange, CancellationToken token)
     {
       _interval = TimeSpan.Parse(System.Configuration.ConfigurationManager.AppSettings["PollInterval"]);
       _token = token;
       _onChange = onChange;
 
-      using (var m = new TestEntities())
+      using (var m = new SqlChangeTrackerEntities())
       {
-          foreach (var tt in m.TrackedTables)
+          foreach (var tt in m.TrackedRows1)
           {
               if (!string.IsNullOrEmpty(tt.Table))
               {
@@ -46,9 +46,9 @@ namespace TableReader
     {
       while (!_token.IsCancellationRequested)
       {
-        using (var m = new TestEntities())
+        using (var m = new SqlChangeTrackerEntities())
         {
-            foreach (var tt in m.TrackedTables.ToList())
+            foreach (var tt in m.TrackedRows1.ToList())
             {
                 try
                 {

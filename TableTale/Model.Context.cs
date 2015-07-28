@@ -13,10 +13,10 @@ namespace TableReader
     using System.Data.Entity;
     using System.Data.Entity.Infrastructure;
     
-    public partial class TestEntities : DbContext
+    public partial class SqlChangeTrackerEntities : DbContext
     {
-        public TestEntities()
-            : base("name=TestEntities")
+        public SqlChangeTrackerEntities()
+            : base("name=SqlChangeTrackerEntities")
         {
         }
     
@@ -25,6 +25,6 @@ namespace TableReader
             throw new UnintentionalCodeFirstException();
         }
     
-        public virtual DbSet<TrackedTable> TrackedTables { get; set; }
+        public virtual DbSet<TrackedRow> TrackedRows1 { get; set; }
     }
 }

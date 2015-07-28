@@ -12,7 +12,7 @@ namespace TableReader
     using System;
     using System.Collections.Generic;
     
-    public partial class TrackedTable
+    public partial class TrackedRow
     {
         public long Id { get; set; }
         public string ConnectionString { get; set; }

@@ -5,7 +5,7 @@
     <!-- SSDL content -->
     <edmx:StorageModels>
     <Schema Namespace="TestModel.Store" Provider="System.Data.SqlClient" ProviderManifestToken="2008" Alias="Self" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm/ssdl">
-        <EntityType Name="TrackedTable">
+        <EntityType Name="TrackedRows">
           <Key>
             <PropertyRef Name="Id" />
           </Key>
@@ -19,13 +19,13 @@
           <Property Name="LastRun" Type="datetime" />
         </EntityType>
         <EntityContainer Name="TestModelStoreContainer">
-          <EntitySet Name="TrackedTable" EntityType="Self.TrackedTable" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="TrackedRows" EntityType="Self.TrackedRows" Schema="dbo" store:Type="Tables" />
         </EntityContainer>
       </Schema></edmx:StorageModels>
     <!-- CSDL content -->
     <edmx:ConceptualModels>
       <Schema Namespace="TestModel" Alias="Self" annotation:UseStrongSpatialTypes="false" xmlns:annotation="http://schemas.microsoft.com/ado/2009/02/edm/annotation" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm">
-        <EntityType Name="TrackedTable">
+        <EntityType Name="TrackedRow">
           <Key>
             <PropertyRef Name="Id" />
           </Key>
@@ -39,7 +39,7 @@
           <Property Name="Procedure" Type="String" MaxLength="512" FixedLength="false" Unicode="true" />
         </EntityType>
         <EntityContainer Name="TestEntities" annotation:LazyLoadingEnabled="true">
-          <EntitySet Name="TrackedTables" EntityType="Self.TrackedTable" />
+          <EntitySet Name="TrackedRows1" EntityType="TestModel.TrackedRow" />
         </EntityContainer>
       </Schema>
     </edmx:ConceptualModels>
@@ -47,9 +47,9 @@
     <edmx:Mappings>
       <Mapping Space="C-S" xmlns="http://schemas.microsoft.com/ado/2009/11/mapping/cs">
         <EntityContainerMapping StorageEntityContainer="TestModelStoreContainer" CdmEntityContainer="TestEntities">
-          <EntitySetMapping Name="TrackedTables">
-            <EntityTypeMapping TypeName="TestModel.TrackedTable">
-              <MappingFragment StoreEntitySet="TrackedTable">
+          <EntitySetMapping Name="TrackedRows1">
+            <EntityTypeMapping TypeName="TestModel.TrackedRow">
+              <MappingFragment StoreEntitySet="TrackedRows">
                 <ScalarProperty Name="Procedure" ColumnName="Procedure" />
                 <ScalarProperty Name="Id" ColumnName="Id" />
                 <ScalarProperty Name="ConnectionString" ColumnName="ConnectionString" />
