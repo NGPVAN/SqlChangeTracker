@@ -1,16 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data.SqlClient;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Dapper;
-using Newtonsoft.Json.Linq;
 
-namespace TableReader
+namespace SqlChangeTracker
 {
-  public class TableTale
+    public class TableTale
   {
     private CancellationToken _token;
     private readonly Task _task;
@@ -23,7 +20,7 @@ namespace TableReader
       _token = token;
       _onChange = onChange;
 
-      using (var m = new SqlChangeTrackerEntities())
+      using (var m = new SqlChangeTrackerModel())
       {
           foreach (var tt in m.TrackedRows1)
           {
@@ -46,7 +43,7 @@ namespace TableReader
     {
       while (!_token.IsCancellationRequested)
       {
-        using (var m = new SqlChangeTrackerEntities())
+        using (var m = new SqlChangeTrackerModel())
         {
             foreach (var tt in m.TrackedRows1.ToList())
             {

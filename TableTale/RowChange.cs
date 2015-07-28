@@ -1,6 +1,4 @@
-using Newtonsoft.Json.Linq;
-
-namespace TableReader
+namespace SqlChangeTracker
 {
   public class RowChange
   {

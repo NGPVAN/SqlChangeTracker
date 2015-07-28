@@ -11,16 +11,30 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Topshelf;
 
-namespace TableReader
+namespace SqlChangeTracker
 {
     public class Program
     {
         public static void Main()
         {
             CancellationTokenSource cts = new CancellationTokenSource();
-            var tt = new TableTale(OnChange, cts.Token);
-            cts.Token.WaitHandle.WaitOne();
+            HostFactory.Run(x =>                                 
+            {
+                x.Service<TableTale>((sc) =>
+                {
+                    sc.ConstructUsing(n => new TableTale(OnChange, cts.Token));
+                    sc.WhenStarted(tc => { });
+                    sc.WhenStopped(tc => { cts.Cancel(); });
+                });
+
+                x.RunAsNetworkService();
+
+                x.SetDescription("SqlChangeTracker");
+                x.SetDisplayName("SqlChangeTracker");
+                x.SetServiceName("SqlChangeTracker");
+            });            
         }
 
         public static void OnChange(TrackedRow t, List<RowChange> rowChanges)

@@ -7,16 +7,16 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace TableReader
+namespace SqlChangeTracker
 {
     using System;
     using System.Data.Entity;
     using System.Data.Entity.Infrastructure;
     
-    public partial class SqlChangeTrackerEntities : DbContext
+    public partial class SqlChangeTrackerModel : DbContext
     {
-        public SqlChangeTrackerEntities()
-            : base("name=SqlChangeTrackerEntities")
+        public SqlChangeTrackerModel()
+            : base("name=SqlChangeTrackerModel")
         {
         }
     

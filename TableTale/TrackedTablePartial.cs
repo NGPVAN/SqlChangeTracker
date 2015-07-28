@@ -1,15 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Dapper;
 using System.Diagnostics;
 using System.Transactions;
 using System.Data;
 
-namespace TableReader
+namespace SqlChangeTracker
 {
     public partial class TrackedRow
     {

@@ -7,7 +7,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace TableReader
+namespace SqlChangeTracker
 {
     using System;
     using System.Collections.Generic;

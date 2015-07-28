@@ -24,7 +24,7 @@
       </Schema></edmx:StorageModels>
     <!-- CSDL content -->
     <edmx:ConceptualModels>
-      <Schema Namespace="TestModel" Alias="Self" annotation:UseStrongSpatialTypes="false" xmlns:annotation="http://schemas.microsoft.com/ado/2009/02/edm/annotation" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm">
+      <Schema Namespace="SqlChangeTracker" Alias="Self" annotation:UseStrongSpatialTypes="false" xmlns:annotation="http://schemas.microsoft.com/ado/2009/02/edm/annotation" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm">
         <EntityType Name="TrackedRow">
           <Key>
             <PropertyRef Name="Id" />
@@ -38,17 +38,17 @@
           <Property Name="LastRun" Type="DateTime" Precision="3" />
           <Property Name="Procedure" Type="String" MaxLength="512" FixedLength="false" Unicode="true" />
         </EntityType>
-        <EntityContainer Name="TestEntities" annotation:LazyLoadingEnabled="true">
-          <EntitySet Name="TrackedRows1" EntityType="TestModel.TrackedRow" />
+        <EntityContainer Name="SqlChangeTrackerModel" annotation:LazyLoadingEnabled="true">
+          <EntitySet Name="TrackedRows1" EntityType="SqlChangeTracker.TrackedRow" />
         </EntityContainer>
       </Schema>
     </edmx:ConceptualModels>
     <!-- C-S mapping content -->
     <edmx:Mappings>
       <Mapping Space="C-S" xmlns="http://schemas.microsoft.com/ado/2009/11/mapping/cs">
-        <EntityContainerMapping StorageEntityContainer="TestModelStoreContainer" CdmEntityContainer="TestEntities">
+        <EntityContainerMapping StorageEntityContainer="TestModelStoreContainer" CdmEntityContainer="SqlChangeTrackerModel">
           <EntitySetMapping Name="TrackedRows1">
-            <EntityTypeMapping TypeName="TestModel.TrackedRow">
+            <EntityTypeMapping TypeName="SqlChangeTracker.TrackedRow">
               <MappingFragment StoreEntitySet="TrackedRows">
                 <ScalarProperty Name="Procedure" ColumnName="Procedure" />
                 <ScalarProperty Name="Id" ColumnName="Id" />
