@@ -69,7 +69,10 @@ namespace TableReader
                     }
 
                     tt.LastRun = DateTime.Now;
-                    Trace.WriteLine(string.Format("{0}: {1} changes.  query took {2}, publish took {3}", tt.GetFullName(), changes.Count(), queryStopwatch.Elapsed.ToString(), publishStopwatch.Elapsed.ToString()));
+                    if (changes.Any())
+                    {
+                        Trace.WriteLine(string.Format("{0}: {1} changes.  query took {2}, publish took {3}", tt.GetFullName(), changes.Count(), queryStopwatch.Elapsed.ToString(), publishStopwatch.Elapsed.ToString()));
+                    }
                     m.SaveChanges();
                 }
                 catch (Exception ex)
