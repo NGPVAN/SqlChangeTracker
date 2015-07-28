@@ -7,14 +7,14 @@ using System.Threading.Tasks;
 
 namespace SqlChangeTracker
 {
-    public class TableTale
+    public class Tracker
   {
     private CancellationToken _token;
     private readonly Task _task;
     private readonly Action<TrackedRow, List<RowChange>> _onChange;
     private readonly TimeSpan _interval;
 
-    public TableTale(Action<TrackedRow, List<RowChange>> onChange, CancellationToken token)
+    public Tracker(Action<TrackedRow, List<RowChange>> onChange, CancellationToken token)
     {
       _interval = TimeSpan.Parse(System.Configuration.ConfigurationManager.AppSettings["PollInterval"]);
       _token = token;

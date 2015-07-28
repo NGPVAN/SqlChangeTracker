@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("TableTale")]
+[assembly: AssemblyTitle("SqlChangeTracker")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("NGP VAN")]
-[assembly: AssemblyProduct("TableTale")]
+[assembly: AssemblyProduct("SqlChangeTracker")]
 [assembly: AssemblyCopyright("Copyright © NGP VAN 2014")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]

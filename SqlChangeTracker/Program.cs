@@ -8,32 +8,34 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Topshelf;
 
 namespace SqlChangeTracker
-{
+{   
     public class Program
     {
+        private static readonly string _name = Assembly.GetExecutingAssembly().GetName().Name;
         public static void Main()
         {
             CancellationTokenSource cts = new CancellationTokenSource();
             HostFactory.Run(x =>                                 
             {
-                x.Service<TableTale>((sc) =>
+                x.Service<Tracker>((sc) =>
                 {
-                    sc.ConstructUsing(n => new TableTale(OnChange, cts.Token));
+                    sc.ConstructUsing(n => new Tracker(OnChange, cts.Token));
                     sc.WhenStarted(tc => { });
                     sc.WhenStopped(tc => { cts.Cancel(); });
                 });
 
                 x.RunAsNetworkService();
-
-                x.SetDescription("SqlChangeTracker");
-                x.SetDisplayName("SqlChangeTracker");
-                x.SetServiceName("SqlChangeTracker");
+                
+                x.SetDescription(_name);
+                x.SetDisplayName(_name);
+                x.SetServiceName(_name);
             });            
         }
 
@@ -47,7 +49,10 @@ namespace SqlChangeTracker
             var lastChangeVersion = rowChanges.Last().SYS_CHANGE_VERSION;
             string changeFileName = string.Format("{0}-changes-{1}-{2}.json", t.GetFileName(), firstChangeVersion, lastChangeVersion);
 
-            System.IO.File.WriteAllText(changeFileName, json);
+            if (!string.IsNullOrEmpty(ConfigurationManager.AppSettings["WriteChangesToDisk"])) {
+                System.IO.File.WriteAllText(changeFileName, json);
+            }
+            
             string accountName = ConfigurationManager.AppSettings["AccountName"];
             string accountKey = ConfigurationManager.AppSettings["AccountKey"];
 
@@ -58,7 +63,7 @@ namespace SqlChangeTracker
 
                 CloudBlobClient client = account.CreateCloudBlobClient();
 
-                CloudBlobContainer sampleContainer = client.GetContainerReference("table-reader");
+                CloudBlobContainer sampleContainer = client.GetContainerReference(_name.ToLowerInvariant());
                 sampleContainer.CreateIfNotExists();
 
                 CloudBlockBlob blob = sampleContainer.GetBlockBlobReference(changeFileName);
