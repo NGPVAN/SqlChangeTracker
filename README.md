@@ -17,6 +17,8 @@ Change the connection string in the app.config to a database.  Run the included 
 
 A single metadata table is used which keeps record of the latest version seen for each tracked item.
 
+![](http://i.gyazo.com/8c5ca7b687cf1b364ddfdab793732a0a.png)
+
 # Azure Blob Storage
 
 Optionally, the configuration variables `AccountName` and `AccountKey` can be set.  In this mode, the changes will be serialized to json files and uploaded as blobs to Azure blob storage.
