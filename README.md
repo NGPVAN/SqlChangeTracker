@@ -15,9 +15,7 @@ Change the connection string in the app.config to a database.  Run the included 
 
 # Metadata
 
-A single metadata table is used which keeps record of the latest version seen for each tracked item.
-
-![](http://i.gyazo.com/8c5ca7b687cf1b364ddfdab793732a0a.png)
+A single metadata table is used which keeps record of the latest version seen for each tracked item.  The table contains all the connection information necessary for the tracker to connect to the database being tracked.
 
 # Azure Blob Storage
 
